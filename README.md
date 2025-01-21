@@ -4,7 +4,7 @@ This project is a tutorial project on how to make a netcode for entities unity p
 
 ## Packages
 
-To start a simple project, we need to install the package `Netcode for entities` and `Entities for graphics`.
+To start a simple project, we need to install the package `Netcode for entities`, `Entities for graphics` and `Multiplayer Play Mode`.
 
 Next, we need to change inside of the project settings:
 - on the `Editor` section, find `Enter Play Mode Settings` and set `When entering Play mode` to `Do not reload Domain or Scene`.
@@ -72,3 +72,18 @@ partial struct TestNetcodeEntitiesServerSystem : ISystem
     }
 
 ```
+
+This is only working in the editor. Not actually in game.
+
+## How to iterate
+
+The simple way to iterate your feature while making a multiplayer game is normally to create a build every single time. The build you make will only be set up in `Client` mode. this can be changed like this:
+
+`Project Settings` -> `Multiplayer/Build` -> `Client` -> `NetCode Client Target` 
+
+But we can use something else as well. We can use the package `Multiplayer Play Mode`. 
+
+Create a new window called `Multiplayer Play Mode` and activate one player and it will have a new window appearing that looks like the editor. Then you can select the layout `PlayMode tools` to select if this window is a client, client and server or just the server.
+
+## Synchronise Data
+
