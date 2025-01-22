@@ -87,3 +87,57 @@ Create a new window called `Multiplayer Play Mode` and activate one player and i
 
 ## Synchronise Data
 
+For the moment, we just have some way to communicate between the client and the server but we don't have an `InGame` server/client logic yet.
+
+To add the fact that an entities is part of the `InGame`, we need to add the source connection of the entities trying to join to the `NetworkStreamInGame` component.
+
+To do that, we need to create a new `rpc command` like this:
+
+```C#
+[WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
+partial struct GoInGameClientSystem : ISystem
+{
+    // [BurstCompile]
+    public void OnUpdate(ref SystemState state)
+    {
+        // Get the entity that wants to connect to the ingame server
+        EntityCommandBuffer ecb = new EntityCommandBuffer(Allocator.Temp);
+        foreach (var (networkId, entity) in SystemAPI.Query<RefRO<NetworkId>>().WithNone<NetworkStreamInGame>().WithEntityAccess())
+        {
+            ecb.AddComponent<NetworkStreamInGame>(entity);
+            Debug.Log("Setting Client as InGame");
+            Entity rpcEntity = ecb.CreateEntity();
+            ecb.AddComponent(rpcEntity, new GoInGameRequestRpc());
+            ecb.AddComponent(rpcEntity, new SendRpcCommandRequest());
+        }
+        ecb.Playback(state.EntityManager);
+    }
+}
+
+public struct GoInGameRequestRpc : IRpcCommand
+{
+    
+}
+```
+
+and for the server:
+
+```c#
+[WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
+partial struct GoInGameServerSystem : ISystem
+{
+    // [BurstCompile]
+    public void OnUpdate(ref SystemState state)
+    {
+        EntityCommandBuffer ecb = new EntityCommandBuffer(Allocator.Temp);
+        foreach (var (receiveRpcCommandRequest, entity)
+                 in SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>>().WithAll<GoInGameRequestRpc>().WithEntityAccess())
+        {
+            ecb.AddComponent<NetworkStreamInGame>(receiveRpcCommandRequest.ValueRO.SourceConnection);
+            Debug.Log("Client Connect to server in game");
+            ecb.DestroyEntity(entity);
+        }
+        ecb.Playback(state.EntityManager);
+    }
+}
+```
